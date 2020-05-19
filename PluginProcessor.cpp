@@ -32,14 +32,15 @@ ChorusFxAudioProcessor::ChorusFxAudioProcessor()
 #endif
         ),
     //constructors
-    kparam(*this, nullptr)
+    kparam(*this, nullptr, "PARAMETERS", {
+
+            std::make_unique<AudioParameterFloat>(DEPTH_ID, DEPTH_NAME, 0.0f, 1.0f, 0.5f),
+            std::make_unique<AudioParameterFloat>(LFO_FREQ_ID, LFO_FREQ_NAME, 1.0f, 5.0f, 2.5f),
+            std::make_unique<AudioParameterFloat>(SW_ID, SW_NAME, 2.0f, 5.0f, 3.0f)
+
+        })
 #endif
 {
-    using Parameter = AudioProcessorValueTreeState::Parameter;
-    createAndAddParameter(std::make_unique(DEPTH_ID, DEPTH_NAME, DEPTH_NAME, NormalisableRange<float>(0.0f, 1.0), 0.5f, nullptr, nullptr ));
-    kparam.createAndAddParameter(LFO_FREQ_ID, LFO_FREQ_NAME, LFO_FREQ_NAME, NormalisableRange<float>(1.0f, 5.0f), 2.0f, nullptr, nullptr);
-    kparam.createAndAddParameter(SW_ID, SW_NAME, SW_NAME, NormalisableRange<float>(2.0, 5.0f), 3.0, nullptr, nullptr);
-
     kparam.state = ValueTree("state_now");
     writepos = 0;
     readpos = 0;
