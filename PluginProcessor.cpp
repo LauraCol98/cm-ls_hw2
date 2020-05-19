@@ -1,10 +1,7 @@
 /*
   ==============================================================================
-
     This file was auto-generated!
-
     It contains the basic framework code for a JUCE plugin processor.
-
   ==============================================================================
 */
 
@@ -68,29 +65,29 @@ const String ChorusFxAudioProcessor::getName() const
 
 bool ChorusFxAudioProcessor::acceptsMidi() const
 {
-   #if JucePlugin_WantsMidiInput
+#if JucePlugin_WantsMidiInput
     return true;
-   #else
+#else
     return false;
-   #endif
+#endif
 }
 
 bool ChorusFxAudioProcessor::producesMidi() const
 {
-   #if JucePlugin_ProducesMidiOutput
+#if JucePlugin_ProducesMidiOutput
     return true;
-   #else
+#else
     return false;
-   #endif
+#endif
 }
 
 bool ChorusFxAudioProcessor::isMidiEffect() const
 {
-   #if JucePlugin_IsMidiEffect
+#if JucePlugin_IsMidiEffect
     return true;
-   #else
+#else
     return false;
-   #endif
+#endif
 }
 
 double ChorusFxAudioProcessor::getTailLengthSeconds() const
@@ -109,21 +106,21 @@ int ChorusFxAudioProcessor::getCurrentProgram()
     return 0;
 }
 
-void ChorusFxAudioProcessor::setCurrentProgram (int index)
+void ChorusFxAudioProcessor::setCurrentProgram(int index)
 {
 }
 
-const String ChorusFxAudioProcessor::getProgramName (int index)
+const String ChorusFxAudioProcessor::getProgramName(int index)
 {
     return {};
 }
 
-void ChorusFxAudioProcessor::changeProgramName (int index, const String& newName)
+void ChorusFxAudioProcessor::changeProgramName(int index, const String& newName)
 {
 }
 
 //==============================================================================
-void ChorusFxAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void ChorusFxAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
@@ -141,30 +138,30 @@ void ChorusFxAudioProcessor::releaseResources()
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
-bool ChorusFxAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool ChorusFxAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
 {
-  #if JucePlugin_IsMidiEffect
-    ignoreUnused (layouts);
+#if JucePlugin_IsMidiEffect
+    ignoreUnused(layouts);
     return true;
-  #else
+#else
     // This is the place where you check if the layout is supported.
     // In this template code we only support mono or stereo.
     if (layouts.getMainOutputChannelSet() != AudioChannelSet::mono()
-     && layouts.getMainOutputChannelSet() != AudioChannelSet::stereo())
+        && layouts.getMainOutputChannelSet() != AudioChannelSet::stereo())
         return false;
 
     // This checks if the input layout matches the output layout
-   #if ! JucePlugin_IsSynth
+#if ! JucePlugin_IsSynth
     if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
         return false;
-   #endif
+#endif
 
     return true;
-  #endif
+#endif
 }
 #endif
 
-void ChorusFxAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
+void ChorusFxAudioProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
     ScopedNoDenormals noDenormals;
 
@@ -175,8 +172,8 @@ void ChorusFxAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffe
     int delaylen = delaybuf.getNumSamples();
 
     float depth_now = (kparam.getRawParameterValue(DEPTH_ID))->load();;
-    float dry_now = 1-depth_now;
-    float sw_now = (kparam.getRawParameterValue(SW_ID) )->load() * 0.001;
+    float dry_now = 1 - depth_now;
+    float sw_now = (kparam.getRawParameterValue(SW_ID))->load() * 0.001;
     float frequency_now = (kparam.getRawParameterValue(LFO_FREQ_ID))->load();
     float delayL = 0.0;
     float delayR = 0.0;
@@ -184,31 +181,31 @@ void ChorusFxAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffe
     float* channelOutDataL = buffer.getWritePointer(0);
     float* channelOutDataR = buffer.getWritePointer(1);
 
-        for (int i = 0; i < numSamples; ++i) {
-             float inputL = buffer.getSample(0,i);
-             float inputR = buffer.getSample(1, i);
+    for (int i = 0; i < numSamples; ++i) {
+        float inputL = buffer.getSample(0, i);
+        float inputR = buffer.getSample(1, i);
 
-            //current delay for both channels
-            delayL = amt_delay + sw_now * read_LFO(phase);
-            delayR = amt_delay + sw_now * read_LFO(phase+offset);
+        //current delay for both channels
+        delayL = amt_delay + sw_now * read_LFO(phase);
+        delayR = amt_delay + sw_now * read_LFO(phase + offset);
 
-            float outL = dry_now * inputL/2 + linear_int(delayL, delaylen) * (1 - dry_now);
-            float outR = dry_now * inputR/2 + linear_int(delayR, delaylen) * (1 - dry_now);
+        float outL = dry_now * inputL / 2 + linear_int(delayL, delaylen) * (1 - dry_now);
+        float outR = dry_now * inputR / 2 + linear_int(delayR, delaylen) * (1 - dry_now);
 
-            channelOutDataL[i] = outL;
-            channelOutDataR[i] = outR;
+        channelOutDataL[i] = outL;
+        channelOutDataR[i] = outR;
 
-            phase = get_next_phase(phase);
+        phase = get_next_phase(phase);
 
-            delaybuf.setSample(0, writepos, inputL);
-            delaybuf.setSample(1, writepos, inputR);
-            writepos = (writepos + 1) % delaylen;
-        }
-
-        for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-            buffer.clear(i, 0, buffer.getNumSamples());
-
+        delaybuf.setSample(0, writepos, inputL);
+        delaybuf.setSample(1, writepos, inputR);
+        writepos = (writepos + 1) % delaylen;
     }
+
+    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+        buffer.clear(i, 0, buffer.getNumSamples());
+
+}
 
 
 //==============================================================================
@@ -223,7 +220,7 @@ AudioProcessorEditor* ChorusFxAudioProcessor::createEditor()
 }
 
 //==============================================================================
-void ChorusFxAudioProcessor::getStateInformation (MemoryBlock& destData)
+void ChorusFxAudioProcessor::getStateInformation(MemoryBlock& destData)
 {
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
@@ -231,7 +228,7 @@ void ChorusFxAudioProcessor::getStateInformation (MemoryBlock& destData)
     GUI.getStateInformation(destData);
 }
 
-void ChorusFxAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+void ChorusFxAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
@@ -244,7 +241,7 @@ float ChorusFxAudioProcessor::linear_int(float delay, int delaylen) {
     int prev = floorf(dpr);
     int nxt = (prev + 1) % delaylen;
 
-     return diff * delaybuf.getSample(0, nxt) + (1.0 - diff) * delaybuf.getSample(0, prev);
+    return diff * delaybuf.getSample(0, nxt) + (1.0 - diff) * delaybuf.getSample(0, prev);
 }
 
 float ChorusFxAudioProcessor::get_next_phase(float phi) {
@@ -258,17 +255,6 @@ float ChorusFxAudioProcessor::get_next_phase(float phi) {
 
 float ChorusFxAudioProcessor::read_LFO(float phase) {
     return sinf(0.5 + 0.5 * sinf(2.0f * (float)M_PI * phase));
-}
-
-void ChorusFxAudioProcessor::set_wet(float val) {
-    depth = val;
-}
-void ChorusFxAudioProcessor::set_amt_delay(float val)
-{
-}
-
-void ChorusFxAudioProcessor::set_sweep_width(float val)
-{
 }
 
 //==============================================================================

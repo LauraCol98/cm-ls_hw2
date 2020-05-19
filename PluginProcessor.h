@@ -56,10 +56,6 @@ public:
     void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
-    //setters
-    void set_wet(float val);
-    void set_sweep_width(float val);
-    void set_amt_delay(float val);
 
 private:
     //==============================================================================
