@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<magic>
+  <Styles>
+    <Style name="default">
+      <Nodes/>
+      <Classes>
+        <plot-view border="2" background-color="black" border-color="silver" display="contents"/>
+        <nomargin margin="0" padding="0" border="0"/>
+        <group margin="5" padding="5" border="2" flex-direction="column"/>
+      </Classes>
+      <Types>
+        <Slider border="0" slider-textbox="textbox-below"/>
+        <ToggleButton border="0" max-height="50" caption-size="0" text="Active"/>
+        <TextButton border="0" max-height="50" caption-size="0"/>
+        <ComboBox border="0" max-height="50" caption-size="0"/>
+        <Plot border="0" margin="0" padding="0" background-color="00000000"
+              radius="0"/>
+        <XYDragComponent border="0" margin="0" padding="0" background-color="00000000"
+                         radius="0"/>
+      </Types>
+    </Style>
+  </Styles>
+  <View id="root" resizable="0" resize-corner="0" background-color="FFAF1B1B"
+        width="600" height="300" background-image="bg_png" image-placement="stretch">
+    <Slider caption="Depth" parameter="depth" caption-placement="centred"
+            slider-type="linear-vertical" slider-textbox="textbox-below"
+            lookAndFeel="FoleysFinest" slider-thumb="FF007C1C" slider-track="7F000000"
+            rotary-fill="E90DB73D" rotary-outline="6628770D" slider-text="FFFFFF"
+            slider-text-background="00FFFFFF" slider-text-outline="00FFFFFF"
+            background-color="00000000"/>
+    <Slider caption="LFO freq" parameter="lfofreq" lookAndFeel="FoleysFinest"
+            caption-placement="centred" slider-type="linear-vertical" slider-textbox="textbox-below"
+            slider-thumb="FF007C1C" slider-track="7F000000" rotary-fill="E90DB73D"
+            slider-text="FFFFFFFF" rotary-outline="6628770D" slider-text-highlight="66154457"
+            slider-text-background="00FFFFFF" slider-text-outline="00FFFFFF"
+            background-alpha="" background-color="00000000"/>
+    <Slider caption="Sweep Width (ms)" parameter="sweepwidth" slider-textbox="textbox-below"
+            slider-type="linear-vertical" lookAndFeel="FoleysFinest" caption-placement="centred"
+            slider-thumb="FF007C1C" rotary-fill="E90DB73D" slider-text-background="00FFFFFF"
+            slider-text-outline="00FFFFFF" rotary-outline="6628770D" slider-text="FFFFFFFF"
+            slider-track="7F000000" slider-text-highlight="66154457" background-color="00000000"/>
+  </View>
+</magic>

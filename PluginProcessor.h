@@ -56,22 +56,36 @@ public:
     void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    //setters
     void set_wet(float val);
     void set_sweep_width(float val);
     void set_amt_delay(float val);
 
-    float get_LFO(float phase);
-    float linear_int(float delay_now, int delaylen, int channel);
-    float get_nextPhase(float phi);
-
 private:
     //==============================================================================
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ChorusFxAudioProcessor)
 
     AudioSampleBuffer delaybuf;
-    float wet;
-    float amt_delay;
-    float phase;
+    AudioProcessorValueTreeState kparam;
+    int writepos;
+    int readpos;
+    foleys::MagicProcessorState GUI{ *this, kparam };
+
+
+    float depth;
+    float LFO_freq;
+    int Gdpw; //global state variable
+    int Gphi;// global state vriable
+    const float amt_delay = 0.020f; 
     float sweep_width;
-    int dpw;
+    float phase;
+    float offset;
+
+    //********************************************************************************************//
+    //getters
+    float get_next_phase(float phase);
+    float linear_int(float delay, int delaylen);
+    float read_LFO(float phase);
+
 };

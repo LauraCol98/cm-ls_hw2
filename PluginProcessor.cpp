@@ -9,28 +9,50 @@
 */
 
 #include "PluginProcessor.h"
-#include "PluginEditor.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#define DEPTH_NAME "Depth"
+#define DEPTH_ID "depth"
+
+#define SW_NAME "Sweep Width (ms)"
+#define SW_ID "sweepwidth"
+
+#define LFO_FREQ_NAME "LFO freq"
+#define LFO_FREQ_ID "lfofreq"
 //==============================================================================
 ChorusFxAudioProcessor::ChorusFxAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  AudioChannelSet::stereo(), true)
-                      #endif
-                       .withOutput ("Output", AudioChannelSet::stereo(), true)
-                     #endif
-                       )
+    : AudioProcessor(BusesProperties()
+#if ! JucePlugin_IsMidiEffect
+#if ! JucePlugin_IsSynth
+        .withInput("Input", AudioChannelSet::stereo(), true)
+#endif
+        .withOutput("Output", AudioChannelSet::stereo(), true)
+#endif
+        ),
+    //constructors
+    kparam(*this, nullptr)
 #endif
 {
-    wet = 0;
-    amt_delay = 0.020f; //20ms
+    using Parameter = AudioProcessorValueTreeState::Parameter;
+    createAndAddParameter(std::make_unique(DEPTH_ID, DEPTH_NAME, DEPTH_NAME, NormalisableRange<float>(0.0f, 1.0), 0.5f, nullptr, nullptr ));
+    kparam.createAndAddParameter(LFO_FREQ_ID, LFO_FREQ_NAME, LFO_FREQ_NAME, NormalisableRange<float>(1.0f, 5.0f), 2.0f, nullptr, nullptr);
+    kparam.createAndAddParameter(SW_ID, SW_NAME, SW_NAME, NormalisableRange<float>(2.0, 5.0f), 3.0, nullptr, nullptr);
+
+    kparam.state = ValueTree("state_now");
+    writepos = 0;
+    readpos = 0;
+    depth = 0.5;
+    LFO_freq = 2.0;
+    sweep_width = 0.005f; //5ms
     phase = 0;
-    sweep_width = 0.005; // 5ms
-    dpw = 0;
+
+    //global variables
+    Gdpw = 0;
+    offset = 0.25f;
+    Gphi = 0;
+
 }
 
 ChorusFxAudioProcessor::~ChorusFxAudioProcessor()
@@ -104,7 +126,11 @@ void ChorusFxAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
-    delaybuf.setSize(2, sampleRate * 2);
+
+    delaybuf.setSize(getTotalNumInputChannels(), sampleRate + samplesPerBlock + 3);
+    delaybuf.clear();
+
+
 }
 
 void ChorusFxAudioProcessor::releaseResources()
@@ -140,41 +166,49 @@ bool ChorusFxAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
 void ChorusFxAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
 {
     ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
+
+    auto totalNumInputChannels = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
-
-    auto* channelOutDataL = buffer.getWritePointer(0);
-    auto* channelOutDataR = buffer.getWritePointer(1);
-    float sw_now = sweep_width;
-    float wet_now = wet;
-
-    int buflen = buffer.getNumSamples();
+    int numSamples = buffer.getNumSamples();
     int delaylen = delaybuf.getNumSamples();
 
-   
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelInData = buffer.getReadPointer (channel);
+    float depth_now = (kparam.getRawParameterValue(DEPTH_ID))->load();;
+    float dry_now = 1-depth_now;
+    float sw_now = (kparam.getRawParameterValue(SW_ID) )->load() * 0.001;
+    float frequency_now = (kparam.getRawParameterValue(LFO_FREQ_ID))->load();
+    float delayL = 0.0;
+    float delayR = 0.0;
 
-        for (int sample = 0; sample < buflen; ++sample)
-        {
-            float delay_now = ( amt_delay + (double)sweep_width * get_LFO(phase)) * getSampleRate(); //in samples
-            float out = (1 - wet_now) * channelInData[sample] + wet_now * linear_int(delay_now, delaylen, channel);
+    float* channelOutDataL = buffer.getWritePointer(0);
+    float* channelOutDataR = buffer.getWritePointer(1);
 
-            buffer.setSample(channel,sample, out);
+        for (int i = 0; i < numSamples; ++i) {
+             float inputL = buffer.getSample(0,i);
+             float inputR = buffer.getSample(1, i);
 
-            phase = get_nextPhase(phase);
-            delaybuf.setSample(channel, sample, channelInData[sample]);
+            //current delay for both channels
+            delayL = amt_delay + sw_now * read_LFO(phase);
+            delayR = amt_delay + sw_now * read_LFO(phase+offset);
 
-            ++dpw % delaylen;
+            float outL = dry_now * inputL/2 + linear_int(delayL, delaylen) * (1 - dry_now);
+            float outR = dry_now * inputR/2 + linear_int(delayR, delaylen) * (1 - dry_now);
+
+            channelOutDataL[i] = outL;
+            channelOutDataR[i] = outR;
+
+            phase = get_next_phase(phase);
+
+            delaybuf.setSample(0, writepos, inputL);
+            delaybuf.setSample(1, writepos, inputR);
+            writepos = (writepos + 1) % delaylen;
         }
 
-       
+        for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+            buffer.clear(i, 0, buffer.getNumSamples());
+
     }
-}
+
 
 //==============================================================================
 bool ChorusFxAudioProcessor::hasEditor() const
@@ -184,7 +218,7 @@ bool ChorusFxAudioProcessor::hasEditor() const
 
 AudioProcessorEditor* ChorusFxAudioProcessor::createEditor()
 {
-    return new ChorusFxAudioProcessorEditor (*this);
+    return new foleys::MagicPluginEditor(GUI, BinaryData::interface_xml, BinaryData::interface_xmlSize);
 }
 
 //==============================================================================
@@ -193,49 +227,48 @@ void ChorusFxAudioProcessor::getStateInformation (MemoryBlock& destData)
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
+    GUI.getStateInformation(destData);
 }
 
 void ChorusFxAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
+    GUI.setStateInformation(data, sizeInBytes, getActiveEditor());
 }
 
-float ChorusFxAudioProcessor::get_LFO(float phase) {
-    return 0.5 + 0.5 * sinf(2 * M_PI * phase);
+float ChorusFxAudioProcessor::linear_int(float delay, int delaylen) {
+    float dpr = fmodf((float)writepos - (float)(delay * getSampleRate()) + (float)delaylen - 3.0, (float)delaylen);
+    float diff = dpr - floorf(dpr);
+    int prev = floorf(dpr);
+    int nxt = (prev + 1) % delaylen;
+
+     return diff * delaybuf.getSample(0, nxt) + (1.0 - diff) * delaybuf.getSample(0, prev);
 }
 
-float ChorusFxAudioProcessor::linear_int(float delay_now, int delaylen, int channel) {
-    float dpr = fmodf((float)dpw - (float)delay_now + (float)delaylen, (float)delaylen);
-    int prev = floor(dpr);
-    float diff = dpr - prev;
-    int next =  (prev + 1) % delaylen;
-
-    return diff * delaybuf.getSample(channel, next) + (1 - diff) * delaybuf.getSample(channel, prev);
-
-}
-
-float ChorusFxAudioProcessor::get_nextPhase(float phi) {
-    float ir = 1 / getSampleRate();
-    float freq = 3;
-    phi += freq * ir;
-    if (phi >= 1)
+float ChorusFxAudioProcessor::get_next_phase(float phi) {
+    float isr = 1.0 / getSampleRate(); // better to multiply rather than divide!
+    float frequency_now = LFO_freq;
+    phi += static_cast<float>(frequency_now * isr);
+    if (phi >= 1.0)
         phi -= 1.0;
-
     return phi;
-
 }
 
+float ChorusFxAudioProcessor::read_LFO(float phase) {
+    return sinf(0.5 + 0.5 * sinf(2.0f * (float)M_PI * phase));
+}
+
+void ChorusFxAudioProcessor::set_wet(float val) {
+    depth = val;
+}
 void ChorusFxAudioProcessor::set_amt_delay(float val)
 {
-    wet = val;
 }
 
 void ChorusFxAudioProcessor::set_sweep_width(float val)
 {
-    wet = val;
 }
-
 
 //==============================================================================
 // This creates new instances of the plugin..
