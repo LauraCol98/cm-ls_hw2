@@ -38,6 +38,7 @@ ChorusFxAudioProcessor::ChorusFxAudioProcessor()
         })
 #endif
 {
+    kparam.state = ValueTree(BinaryData::interface_xml);
     writepos = 0;
     readpos = 0;
     depth = 0.5;
@@ -181,7 +182,8 @@ void ChorusFxAudioProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer
     float* channelOutDataR = buffer.getWritePointer(1);
 
     for (int sample = 0; sample < numSamples; ++sample) {
-        if (totalNumInputChannels < 2) { //if MONO
+
+        if (totalNumInputChannels == 1) { //if MONO
             float input_mono = buffer.getSample(0, sample);
 
             float outL = dry_now * input_mono / 2 + linear_int(delayL, delaylen) * (1 - dry_now);
