@@ -14,6 +14,8 @@ On Windows:
         - open the .jucer file from this repository and add the new module. allow binary data.
    
     Save and open in your IDE. I used Visual Studio.
-    Compile and generate VST3/AU file, that you'll find in your build folder.
+    Compile and generate VST3 file, that you'll find in your build folder.
     Load the plugin in your DAW or use the plugin host provided by JUCE.
     Have fun!
+
+For mac users it's almost the same, I guess.
