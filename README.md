@@ -6,8 +6,14 @@ The interface was created using https://github.com/ffAudio/foleys_gui_magic and 
 On Windows:
 
     Download Juce (http://www.juce.com/)
-    Open with Projucer the .jucer file.
+    Install the module foleys gui magic with the following command line lines:
+        - cd "YOUR_PATH"
+        - mkdir "module folder"
+        - cd "module folder name"
+        - git clone https://github.com/ffAudio/foleys_gui_magic
+        - open the .jucer file from this repository and add the new module. allow binary data.
+   
     Save and open in your IDE. I used Visual Studio.
-    Compile and generate VST3 file, that you'll find in your build folder.
-    Load the VST3 in your DAW or use the plugin host provided by JUCE.
+    Compile and generate VST3/AU file, that you'll find in your build folder.
+    Load the plugin in your DAW or use the plugin host provided by JUCE.
     Have fun!
