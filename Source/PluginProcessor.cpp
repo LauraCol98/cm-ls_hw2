@@ -192,30 +192,32 @@ void ChorusFxAudioProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer
             channelOutDataL[sample] = outL;
             channelOutDataR[sample] = outR;
 
-            delaybuf.setSample(0,writepos, input_mono);
+            delaybuf.setSample(0, writepos, input_mono);
             phase = get_next_phase(phase);
             writepos = (writepos + 1) % delaylen;
         }
 
-        //stereo input
-        float inputL = buffer.getSample(0, sample);
-        float inputR = buffer.getSample(1, sample);
+        else {
+            //stereo input
+            float inputL = buffer.getSample(0, sample);
+            float inputR = buffer.getSample(1, sample);
 
-        //current delay for both channels
-        delayL = amt_delay + sw_now * read_LFO(phase);
-        delayR = amt_delay + sw_now * read_LFO(phase + offset);
+            //current delay for both channels
+            delayL = amt_delay + sw_now * read_LFO(phase);
+            delayR = amt_delay + sw_now * read_LFO(phase + offset);
 
-        float outL = dry_now * inputL / 2 + linear_int(delayL, delaylen) * (1 - dry_now);
-        float outR = dry_now * inputR / 2 + linear_int(delayR, delaylen) * (1 - dry_now);
+            float outL = dry_now * inputL / 2 + linear_int(delayL, delaylen) * (1 - dry_now);
+            float outR = dry_now * inputR / 2 + linear_int(delayR, delaylen) * (1 - dry_now);
 
-        channelOutDataL[sample] = outL;
-        channelOutDataR[sample] = outR;
+            channelOutDataL[sample] = outL;
+            channelOutDataR[sample] = outR;
 
-        phase = get_next_phase(phase);
+            phase = get_next_phase(phase);
 
-        delaybuf.setSample(0, writepos, inputL);
-        delaybuf.setSample(1, writepos, inputR);
-        writepos = (writepos + 1) % delaylen;
+            delaybuf.setSample(0, writepos, inputL);
+            delaybuf.setSample(1, writepos, inputR);
+            writepos = (writepos + 1) % delaylen;
+        }
     }
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
