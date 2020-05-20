@@ -9,8 +9,11 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#define DEPTH_NAME "Depth"
-#define DEPTH_ID "depth"
+#define DEPTH1_NAME "Depth1"
+#define DEPTH1_ID "depth1"
+
+#define DEPTH2_NAME "Depth2"
+#define DEPTH2_ID "depth2"
 
 #define SW_NAME "Sweep Width (ms)"
 #define SW_ID "sweepwidth"
@@ -31,9 +34,10 @@ ChorusFxAudioProcessor::ChorusFxAudioProcessor()
     //constructors
     kparam(*this, nullptr, "PARAMETERS", {
 
-            std::make_unique<AudioParameterFloat>(DEPTH_ID, DEPTH_NAME, 0.0f, 1.0f, 0.5f),
+            std::make_unique<AudioParameterFloat>(DEPTH1_ID, DEPTH1_NAME, 0.0f, 1.0f, 0.5f),
+            std::make_unique<AudioParameterFloat>(DEPTH2_ID, DEPTH2_NAME, 0.0f, 1.0f, 0.5f),
             std::make_unique<AudioParameterFloat>(LFO_FREQ_ID, LFO_FREQ_NAME, 1.0f, 5.0f, 3.0f),
-            std::make_unique<AudioParameterFloat>(SW_ID, SW_NAME, 2.0f, 5.0f, 3.0f)
+            std::make_unique<AudioParameterFloat>(SW_ID, SW_NAME, 2.0f, 10.0f, 4.0f)
 
         })
 #endif
@@ -43,13 +47,9 @@ ChorusFxAudioProcessor::ChorusFxAudioProcessor()
     readpos = 0;
     depth = 0.5;
     LFO_freq = 2.0;
-    sweep_width = 0.005f; //5ms
+    sweep_width = 0.01f; //10ms
     phase = 0.0f;
-
-    //global variables
-    Gdpw = 0;
-    offset = 0.25f;
-    Gphi = 0;
+    amt_delay = 0.020f;
 
 }
 
@@ -171,8 +171,9 @@ void ChorusFxAudioProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer
     int numSamples = buffer.getNumSamples();
     int delaylen = delaybuf.getNumSamples();
 
-    float depth_now = (kparam.getRawParameterValue(DEPTH_ID))->load();;
-    float dry_now = 1 - depth_now;
+    float depth1_now = (kparam.getRawParameterValue(DEPTH1_ID))->load();
+    float depth2_now = (kparam.getRawParameterValue(DEPTH2_ID))->load();
+
     float sw_now = (kparam.getRawParameterValue(SW_ID))->load() * 0.001;
     float frequency_now = (kparam.getRawParameterValue(LFO_FREQ_ID))->load();
     float delayL = 0.0;
@@ -180,14 +181,14 @@ void ChorusFxAudioProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer
 
     float* channelOutDataL = buffer.getWritePointer(0);
     float* channelOutDataR = buffer.getWritePointer(1);
-
+    
     for (int sample = 0; sample < numSamples; ++sample) {
 
         if (totalNumInputChannels == 1) { //if MONO
             float input_mono = buffer.getSample(0, sample);
 
-            float outL = dry_now * input_mono / 2 + linear_int(delayL, delaylen) * (1 - dry_now);
-            float outR = dry_now * input_mono / 2 + linear_int(delayR, delaylen) * (1 - dry_now);
+            float outL = (1-depth1_now) * input_mono / 2 + linear_int(delayL, delaylen) * (depth1_now);
+            float outR = (1-depth2_now) * input_mono / 2 + linear_int(delayR, delaylen) * (depth2_now);
 
             channelOutDataL[sample] = outL;
             channelOutDataR[sample] = outR;
@@ -206,8 +207,8 @@ void ChorusFxAudioProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer
             delayL = amt_delay + sw_now * read_LFO(phase);
             delayR = amt_delay + sw_now * read_LFO(phase + offset);
 
-            float outL = dry_now * inputL / 2 + linear_int(delayL, delaylen) * (1 - dry_now);
-            float outR = dry_now * inputR / 2 + linear_int(delayR, delaylen) * (1 - dry_now);
+            float outL = (1-depth1_now) * inputL / 2 + linear_int(delayL, delaylen) * (depth1_now);
+            float outR = (1-depth2_now) * inputR / 2 + linear_int(delayR, delaylen) * (depth2_now);
 
             channelOutDataL[sample] = outL;
             channelOutDataR[sample] = outR;

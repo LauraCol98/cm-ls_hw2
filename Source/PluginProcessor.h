@@ -71,9 +71,7 @@ private:
 
     float depth;
     float LFO_freq;
-    int Gdpw; //global state variable
-    int Gphi;// global state vriable
-    const float amt_delay = 0.020f; 
+    float amt_delay; 
     float sweep_width;
     float phase;
     float offset;
