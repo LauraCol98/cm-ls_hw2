@@ -2,6 +2,7 @@
 This chorus plugin was developed using JUCE framework in C++ for the course of Computer Music - Languages and Systems at the Politecnico of Milan.
 The interface was created using https://github.com/ffAudio/foleys_gui_magic and is stored inside the XML file.
 
+![plugin preview](/images/preview.png)
 # How to build?
 On Windows:
 
