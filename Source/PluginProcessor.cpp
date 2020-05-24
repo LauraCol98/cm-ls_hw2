@@ -186,9 +186,10 @@ void ChorusFxAudioProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer
 
         if (totalNumInputChannels == 1) { //if MONO
             float input_mono = buffer.getSample(0, sample);
+            float delay_mono = amt_delay + sw_now * read_LFO(phase + frequency_now);
 
-            float outL = (1-depth1_now) * input_mono / 2 + linear_int(delayL, delaylen) * (depth1_now);
-            float outR = (1-depth2_now) * input_mono / 2 + linear_int(delayR, delaylen) * (depth2_now);
+            float outL = (1-depth1_now) * input_mono / 2 + linear_int(delay_mono, delaylen) * (depth1_now);
+            float outR = (1-depth2_now) * input_mono / 2 + linear_int(delay_mono, delaylen) * (depth2_now);
 
             channelOutDataL[sample] = outL;
             channelOutDataR[sample] = outR;
@@ -204,8 +205,8 @@ void ChorusFxAudioProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer
             float inputR = buffer.getSample(1, sample);
 
             //current delay for both channels
-            delayL = amt_delay + sw_now * read_LFO(phase);
-            delayR = amt_delay + sw_now * read_LFO(phase + offset);
+            delayL = amt_delay + sw_now * read_LFO(phase + frequency_now);
+            delayR = amt_delay + sw_now * read_LFO(phase + frequency_now + offset);
 
             float outL = (1-depth1_now) * inputL / 2 + linear_int(delayL, delaylen) * (depth1_now);
             float outR = (1-depth2_now) * inputR / 2 + linear_int(delayR, delaylen) * (depth2_now);
@@ -273,7 +274,7 @@ float ChorusFxAudioProcessor::get_next_phase(float phi) {
 }
 
 float ChorusFxAudioProcessor::read_LFO(float phase) {
-    return sinf(0.5 + 0.5 * sinf(2.0f * (float)M_PI * phase));
+    return 0.5 + 0.5 * sinf(2.0f * (float)M_PI * phase);
 }
 
 //==============================================================================
